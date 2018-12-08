@@ -1,0 +1,130 @@
+/* nonograms CSS */
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+.container {
+  width: 800px;
+  margin: 0 auto;
+}
+
+.puzzle-select {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+.puzzle-select-item {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  margin: 10px;
+  float: left;
+}
+.puzzle-select-item:hover {
+  cursor: pointer;
+  background: #F1F1F1;
+}
+.puzzle-select-item img {
+  border: 1px solid #333;
+  margin: 20px;
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -50px;
+  margin-left: -50px;
+  width: 100px;
+  height: 100px;
+}
+.puzzle-select-item .icon-incomplete {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -1em;
+  margin-left: -1em;
+}
+.puzzle-select-item .icon-complete {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  display: none;
+  z-index: 100;
+  color: green;
+}
+
+.puzzle-select-item.complete .icon-incomplete {
+  display: none;
+}
+.puzzle-select-item.complete .icon-complete {
+  display: block;
+}
+.puzzle-select-item.complete img {
+  display: block;
+}
+
+.puzzle {
+
+}
+.puzzle-square {
+  fill: none;
+}
+.puzzle-square.puzzle-square-box rect {
+  fill: #2980b9;
+}
+
+.puzzle-square.puzzle-square-cross rect {
+  display: none;
+}
+.puzzle-square.puzzle-square-cross path {
+  stroke: red;
+}
+
+
+
+.nonogram {
+
+}
+.row-clues {
+  background: #CCC;
+}
+.column-clues {
+  
+}
+.puzzle {
+
+}
+.grids {
+  stroke: #333;
+  stroke-width: 1px;
+  fill: none;
+}
+
+/**
+ * For modern browsers
+ * 1. The space content is one way to avoid an Opera bug when the
+ *    contenteditable attribute is included anywhere else in the document.
+ *    Otherwise it causes space to appear at the top and bottom of elements
+ *    that are clearfixed.
+ * 2. The use of `table` rather than `block` is only necessary if using
+ *    `:before` to contain the top-margins of child elements.
+ */
+ .cf:before,
+ .cf:after {
+     content: " "; /* 1 */
+     display: table; /* 2 */
+ }
+ 
+ .cf:after {
+     clear: both;
+ }
+ 
+ /**
+  * For IE 6/7 only
+  * Include this rule to trigger hasLayout and contain floats.
+  */
+ .cf {
+     *zoom: 1;
+ }
