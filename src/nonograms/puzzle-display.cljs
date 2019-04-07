@@ -1,9 +1,12 @@
 (ns nonograms.puzzle-display
   (:require
    [sablono.core :as sab :include-macros true]
-   [cljs.test :as test])
+   [cljs.test :as test]
+   [reagent.core :as reagent])
   (:require-macros
    [devcards.core :as dc :refer [defcard deftest]]))
+
+(enable-console-print!)
 
 (defn puzzle-square-class [type]
   (case type 
@@ -86,21 +89,67 @@
                      [1 3]])
 
 
+;;:on-click (fn [event] (reset! mouse-position {:x (.-clientX event) :y (.-clientY event)}))
+;; :onMouseMove (fn [event] (console/log ((.getBoundingClientRect (-> event .-currentTarget)) .-left)) (reset! mouse-position {:x (- (.-pageX event) (-> event .-currentTarget .-offsetLeft)) :y (.-clientY event)}))
+;; :onMouseMove (fn [event] (println "asd"))
 
-(defcard nonogram
-  (sab/html [:svg { :class "nonogram" :width 480 :height 480 }
-             [:g { :class "row-clues" :transform "translate(0, 160)" } (map-indexed row-clues row-clues-data)]
-             [:g { :class "column-clues" :transform "translate(160, 0)" } (map-indexed col-clues col-clues-data)]
-             [:g { :class "puzzle" :transform "translate(160, 160)" } (board test-board)]
-             [:defs 
-              [:pattern { :id "grid" :width 32 :height 32 :patternUnits "userSpaceOnUse" }
-               [:path { :d "M0 0 H32 V32 H-32 V-32" :fill "none" :stroke "#CCC" :stroke-width "1" } ]]]
-             [:g { :class "cursor" }
-              [:rect { :x 288 :y 0 :width 32 :height 500 :fill "#2980b9" :opacity 0.1 }]
-              [:rect { :x 0 :y 288 :width 500 :height 32 :fill "#2980b9" :opacity 0.1 }]]
-             [:g { :class "grids" }
-              [:rect {:x 0 :y 0 :width 480 :height 480 :fill "url(#grid)"}]
-              [:rect { :x 0 :y 160 :width 160 :height 400 :stroke "black" } ]
-              [:rect { :x 160 :y 0 :width 400 :height 160 :stroke "black" } ]
-              [:rect { :x 0 :y 0 :width 160 :height 160 :fill "#FFF" }]
-              ]]))
+(defn round-position [{x :x y :y}]
+  { :x (Math/floor (/ x 32)) :y (Math/floor (/ y 32)) })
+
+(defn get-relative-position [event]
+  (let [elementX (.-x (.getBoundingClientRect (.-currentTarget event)))
+        mouseX (.-clientX event)
+        relativeX (- mouseX elementX)
+        elementY (.-y (.getBoundingClientRect (.-currentTarget event)))
+        mouseY (.-clientY event)
+        relativeY (- mouseY elementY)]
+    { :x relativeX :y relativeY }))
+
+(defn map-position-value [position-value]
+  (Math/floor (/ (- position-value 160) 32)))
+
+(defn map-position-values [{x :x y :y}]
+  { :x (map-position-value x) :y (map-position-value y)})
+
+(defn remove-negative-value [{x :x y :y :as position}]
+  (if (or (< x 0) (< y 0)) nil position))
+
+(defn map-position [event]
+  (-> event
+      get-relative-position
+      map-position-values
+      remove-negative-value))
+
+(defn cursor-display [position]
+  (if (nil? position)
+    [:g {:class "cursor"}]
+    [:g {:class "cursor"}
+     [:rect {:x (* (get (round-position position) :x) 32) :y 0 :width 32 :height 500 :fill "#2980b9" :opacity 0.1}]
+     [:rect {:x 0 :y (* (get (round-position position) :y) 32) :width 500 :height 32 :fill "#2980b9" :opacity 0.1}]]))
+
+(defn display [row-clues-data col-clues-data click-handler]
+  (let [mouse-position (reagent/atom nil)]
+    (fn [row-clues-data col-clues-data]
+      [:div { :class "nonogram-wrapper"
+             :style { :width 480 :height 480 }
+             :on-click (fn [event] (click-handler (map-position event)))
+             :onMouseOut (fn [event] (reset! mouse-position nil))
+             :onMouseMove (fn [event]
+                            (let [position (map-position event)
+                                  positionX (position :x)
+                                  positionY (position :y)
+                                  markerX (+ 160 (* 32 positionX))
+                                  markerY (+ 160 (* 32 positionY))]
+                              (reset! mouse-position {:x markerX :y markerY}))) }
+       [:svg {:class "nonogram" :width 480 :height 480 }
+        [:g {:class "row-clues" :transform "translate(0, 160)"} (map-indexed row-clues row-clues-data)]
+        [:g {:class "column-clues" :transform "translate(160, 0)"} (map-indexed col-clues col-clues-data)]
+        [:defs
+         [:pattern {:id "grid" :width 32 :height 32 :patternUnits "userSpaceOnUse"}
+          [:path {:d "M0 0 H32 V32 H-32 V-32" :fill "none" :stroke "#CCC" :stroke-width "1"}]]]
+        (cursor-display @mouse-position)
+        [:g {:class "grids"}
+         [:rect {:x 0 :y 0 :width 480 :height 480 :fill "url(#grid)"}]
+         [:rect {:x 0 :y 160 :width 160 :height 400 :stroke "black"}]
+         [:rect {:x 160 :y 0 :width 400 :height 160 :stroke "black"}]
+         [:rect {:x 0 :y 0 :width 160 :height 160 :fill "#FFF"}]]]])))

@@ -15,14 +15,14 @@
 (def incomplete-icon
   [:span {:class "icon icon-incomplete"} [:i {:class "fas fa-2x fa-question"}]])
 
-(defn puzzle-list-item [puzzle]
-  [:li { :id (puzzle :id) :class (if (puzzle :complete) "puzzle-select-item complete" "puzzle-select-item")}
+(defn puzzle-list-item [puzzle puzzle-click]
+  [:li { :on-click #(puzzle-click (puzzle :id)) :id (puzzle :id) :class (if (puzzle :complete) "puzzle-select-item complete" "puzzle-select-item")}
    complete-icon
    incomplete-icon
    [:img {:src "https://bulma.io/images/placeholders/128x128.png"}]])
 
-(defn puzzle-select [puzzles]
-  [:ul {:class "puzzle-select cf"} (map puzzle-list-item puzzles)])
+(defn puzzle-select [puzzles puzzle-click]
+  [:ul {:class "puzzle-select cf"} (map #(puzzle-list-item %1 puzzle-click) puzzles)])
 
 (defcard puzzle-select
   "This component is used for displaying a list of puzzles for the user to select from,

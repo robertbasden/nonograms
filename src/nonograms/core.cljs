@@ -2,53 +2,61 @@
   (:require
    [sablono.core :as sab :include-macros true]
    [nonograms.puzzle-select :as puzzle-select]
-   [nonograms.puzzle-display]
+   [nonograms.puzzle-display :as puzzle-display]
    [cljs.test :as test]
-   [cljs-time.core :as time])
+   [cljs-time.core :as time]
+   [reagent.core :as reagent]))
 
-  (:require-macros
-   [devcards.core :as dc :refer [defcard deftest]]))
+;; Data
 
-(defn uuid [] (str (java.util.UUID/randomUUID)))
+(def puzzles [{:id "3deb3e23-e59c-46db-a365-df97bda7fad5" :name "Boat", :row-clues [[1 1] [2 2]], :col-clues [[3 4] [5 6]]}
+              {:id "2eb36737-8988-4e13-85e1-8bdaf077accb" :name "Plane", :row-clues [[1 1 1 1] [2 3 2]], :col-clues [[3 1 4] [2]]}])
+
+(def complete-puzzles (list "3deb3e23-e59c-46db-a365-df97bda7fad5"))
 
 (enable-console-print!)
 
-(def row [true true false true false true true true false true])
+;; State
 
-(defn derive-clues [list]
-  "Given a row (or column) in the puzzle extract the clues to display for that particular row, this
-  basically amounts to counting the groups of true (filled) squares"
-  (first (reduce (fn [[clues count] value]
-                   (if value
-                     [clues (inc count)]
-                     [(conj clues count) 0])) [[] 0] (conj list false))))
+(def state (reagent/atom nil))
 
-(defcard derive-clues
-  "Given a row (or column) in the puzzle extract the clues to display for that particular row, this
-   basically amounts to counting the groups of true (filled) squares"
-  (derive-clues row))
+(defn start-puzzle [id]
+  (reset! state id))
 
-(def puzzles
-  [{:complete true :id "a832a4d5-73e2-4efe-a078-60133536a8a0" }
-   {:complete false :id "98e2d18e-bcdc-44d4-b7c1-0787de73d649" }
-   {:complete true :id "eca12f3f-393f-4b02-b9db-a6cc7ac39296" }])
+(defn cancel-puzzle []
+  (reset! state nil))
 
-(def state (atom (time/now)))
+(defn get-puzzle [id-to-find]
+  (first (filter #(= (get %1 :id) id-to-find) puzzles)))
 
-(defn count []
-  (js/console.log (time/in-seconds (time/interval @state (time/now))))
-  (.requestAnimationFrame js/window count))
+
+
+;; Pages
+
+(defn puzzle-select [puzzles completed-puzzles puzzle-click]
+  (let [puzzle-display (map (fn [{id :id :as puzzle}] (if (some #{id} completed-puzzles) (assoc puzzle :complete true) puzzle)) puzzles)]
+    (puzzle-select/puzzle-select puzzle-display puzzle-click)))
+
+(defn test-handler [result]
+  (js/console.log result))
+
+(defn playing-puzzle [puzzle]
+  [:div
+   [:div
+    [puzzle-display/display (get puzzle :row-clues) (get puzzle :col-clues) test-handler]]
+   [:div {:on-click cancel-puzzle} "cancel"]]
+  )
+
+(defn page []
+  [:div { :class "container" }
+   (if (nil? @state)
+     (puzzle-select puzzles complete-puzzles #(start-puzzle %1))
+     (playing-puzzle (get-puzzle @state)))])
+
+;; Setup and run
 
 (defn main []
-  ;; conditionally start the app based on whether the #main-app-area
-  ;; node is on the page
-  (if-let [node (.getElementById js/document "main-app-area")]
-    (.render js/ReactDOM (sab/html [:div { :class "container" } (puzzle-select/puzzle-select puzzles)]) node)))
-
-
+  (reagent/render-component [page]
+            (.-body js/document)))
 
 (main)
-
-;; remember to run lein figwheel and then browse to
-;; http://localhost:3449/cards.html
-
